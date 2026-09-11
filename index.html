@@ -3,18 +3,374 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="stuff.ellievv.duckdns.org — small and light.">
-<title>stuff — ellievv</title>
+<meta name="description" content="covalent bonds — a hashi-style puzzle. connect atoms until every valence is happy.">
+<title>covalent bonds — stuff</title>
 <style>
-:root{color-scheme:light dark}*{box-sizing:border-box}body{margin:0;font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;display:grid;place-items:center;min-height:100vh;padding:24px}main{max-width:34rem}h1{font-size:1.4rem;margin:0 0 .5rem}p{margin:.5rem 0;color:inherit;opacity:.85}a{color:inherit}small{opacity:.6}
+  :root{
+    --paper:#fbf7ee; --ink:#22201b; --faint:#8a8474;
+    --line:#e3dac6; --red:#b3402e; --green:#2e7d4f;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:Georgia,'Times New Roman',serif;
+    min-height:100vh;
+  }
+  /* faint notebook lines */
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none;
+    background:repeating-linear-gradient(to bottom, transparent 0 27px, var(--line) 27px 28px);
+    opacity:.45;
+  }
+  .wrap{max-width:720px;margin:0 auto;padding:20px 16px 60px;position:relative}
+  header{border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:12px}
+  header .top{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--faint);display:flex;justify-content:space-between}
+  h1{font-size:26px;margin:6px 0 2px;font-weight:normal}
+  h1 u{text-decoration:underline wavy 1.5px;text-underline-offset:4px}
+  .sub{font-style:italic;color:#5a5546;margin:0;font-size:15px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0}
+  .levels{display:flex;gap:6px;flex-wrap:wrap}
+  .levels button{
+    font-family:ui-monospace,Menlo,monospace;font-size:13px;
+    width:32px;height:30px;background:transparent;color:var(--ink);
+    border:1.5px solid var(--ink);border-radius:255px 15px 225px 15px/15px 225px 15px 255px;
+    cursor:pointer;padding:0;
+  }
+  .levels button.done{background:var(--ink);color:var(--paper)}
+  .levels button.cur{outline:2px solid var(--ink);outline-offset:2px}
+  .btn{
+    font-family:ui-monospace,Menlo,monospace;font-size:13px;
+    background:transparent;border:1.5px solid var(--ink);color:var(--ink);
+    border-radius:15px 225px 15px 255px/255px 15px 225px 15px;
+    padding:5px 10px;cursor:pointer;
+  }
+  .btn:active{transform:translateY(1px)}
+  #msg{font-family:ui-monospace,Menlo,monospace;font-size:13px;min-height:20px;color:#5a5546}
+  #msg.err{color:var(--red)}
+  #msg.win{color:var(--green)}
+  #board{
+    border:2px solid var(--ink);background:#fffdf6;
+    border-radius:3px;display:block;width:100%;height:auto;
+    touch-action:none;user-select:none;-webkit-user-select:none;
+  }
+  .legend{font-size:14px;border:1.5px dashed var(--faint);padding:8px 10px;margin:12px 0}
+  .legend b{font-family:ui-monospace,Menlo,monospace}
+  details{font-size:14px;margin:10px 0}
+  summary{cursor:pointer;font-style:italic}
+  footer{margin-top:18px;border-top:1px solid var(--ink);padding-top:8px;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--faint);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  footer a{color:inherit}
+  /* svg pieces */
+  .atom{cursor:pointer}
+  .atom circle.body{fill:#fffdf6;stroke:var(--ink);stroke-width:2}
+  .atom.satisfied circle.body{fill:#e9f2e7}
+  .atom.selected circle.body{stroke-width:3.5}
+  .atom text{font-family:ui-monospace,Menlo,monospace;pointer-events:none}
+  .bond{stroke:var(--ink);stroke-width:2.5;stroke-linecap:round}
+  .bond-hit{stroke:transparent;stroke-width:16;cursor:pointer}
+  .hint-dot{fill:var(--ink);opacity:.25}
 </style>
 </head>
 <body>
-<main>
-<h1>stuff.ellievv.duckdns.org</h1>
-<p>small and light. quack.</p>
-<p><a href="https://ellievv.duckdns.org">← ellievv.duckdns.org</a></p>
-<p><small>v1 placeholder — tell me what goes here.</small></p>
-</main>
+<div class="wrap">
+  <header>
+    <div class="top"><span>science class → covalent bonds</span><span>per. 3 · fig. 1</span></div>
+    <h1><u>connect the bonds</u></h1>
+    <p class="sub">a hashi-like puzzle with atoms. every atom wants its full valence — H wants 1, O wants 2, N wants 3, C wants 4.</p>
+  </header>
+
+  <div class="row">
+    <div class="levels" id="levels"></div>
+  </div>
+
+  <div class="row">
+    <strong id="lname" style="font-weight:normal;font-style:italic">1 · hydrogen gas</strong>
+    <span style="flex:1"></span>
+    <button class="btn" id="undo">undo</button>
+    <button class="btn" id="clear">clear</button>
+  </div>
+
+  <div id="msg">tap an atom, then tap another in the same row or column.</div>
+
+  <svg id="board" role="application" aria-label="bond puzzle board"></svg>
+
+  <div class="legend" id="hint">hint: …</div>
+
+  <details>
+    <summary>how to play (30 sec)</summary>
+    <p>1. Tap / drag from one atom to another in the <b>same row or column</b> with nothing in between.<br>
+    2. Each tap adds <b>one bond</b>: 1 line → 2 lines → 3 lines → back to 0.<br>
+    3. Bonds <b>can't cross</b> and can't use more than an atom wants.<br>
+    4. Win when every atom is happy <b>and</b> everything is connected into one molecule.<br>
+    5. Tip: click a bond's middle to remove one. <span style="font-family:ui-monospace,monospace">u</span>=undo, <span style="font-family:ui-monospace,monospace">r</span>=clear.</p>
+    <p style="color:#5a5546">In class N was written as 2 sometimes — here we use the real thing: N wants 3. H 1 · O 2 · N 3 · C 4.</p>
+  </details>
+
+  <footer>
+    <span>stuff.ellievv.duckdns.org — pencil &amp; paper ed.</span>
+    <span><a href="https://ellievv.duckdns.org">ellievv.duckdns.org</a> · <a href="https://ewoudvv.github.io/stuff-mirror/">mirror</a></span>
+  </footer>
+</div>
+
+<script>
+"use strict";
+var VALENCE = {H:1, O:2, N:3, C:4};
+var CELL = 52, PAD = 34;
+
+/* levels: atoms on a w×h grid. must be solvable by design. */
+var LEVELS = [
+  {name:"1 · hydrogen gas", hint:"hint: H only wants 1. just connect them once.", w:5,h:3,
+   atoms:[{x:1,y:1,el:"H"},{x:3,y:1,el:"H"}]},
+  {name:"2 · oxygen gas", hint:"hint: O wants 2 each. tap the same pair twice for a double bond.", w:5,h:3,
+   atoms:[{x:1,y:1,el:"O"},{x:3,y:1,el:"O"}]},
+  {name:"3 · nitrogen gas", hint:"hint: N wants 3 each. triple bond — tap three times. strongest bond here.", w:5,h:3,
+   atoms:[{x:1,y:1,el:"N"},{x:3,y:1,el:"N"}]},
+  {name:"4 · water", hint:"hint: O wants 2, each H wants 1. (real water is bent — here it's straight so it fits the grid.)", w:7,h:3,
+   atoms:[{x:3,y:1,el:"O"},{x:1,y:1,el:"H"},{x:5,y:1,el:"H"}]},
+  {name:"5 · methane", hint:"hint: C wants 4. four single bonds, one to each H.", w:5,h:5,
+   atoms:[{x:2,y:2,el:"C"},{x:2,y:0,el:"H"},{x:0,y:2,el:"H"},{x:4,y:2,el:"H"},{x:2,y:4,el:"H"}]},
+  {name:"6 · ammonia", hint:"hint: N wants 3. three H around it, one side left empty.", w:5,h:5,
+   atoms:[{x:2,y:1,el:"N"},{x:0,y:1,el:"H"},{x:4,y:1,el:"H"},{x:2,y:3,el:"H"}]},
+  {name:"7 · carbon dioxide", hint:"hint: C wants 4, each O wants 2. double bond on both sides: O=C=O.", w:7,h:5,
+   atoms:[{x:1,y:2,el:"O"},{x:3,y:2,el:"C"},{x:5,y:2,el:"O"}]},
+  {name:"8 · ethane", hint:"hint: C–C in the middle, then 3 H on each C. check rows and columns.", w:7,h:5,
+   atoms:[{x:2,y:2,el:"C"},{x:4,y:2,el:"C"},
+     {x:2,y:0,el:"H"},{x:0,y:2,el:"H"},{x:2,y:4,el:"H"},
+     {x:4,y:0,el:"H"},{x:6,y:2,el:"H"},{x:4,y:4,el:"H"}]},
+  {name:"9 · ethene", hint:"hint: C=C double bond in the middle, 2 H on each C.", w:7,h:5,
+   atoms:[{x:2,y:2,el:"C"},{x:4,y:2,el:"C"},
+     {x:2,y:0,el:"H"},{x:2,y:4,el:"H"},
+     {x:4,y:0,el:"H"},{x:4,y:4,el:"H"}]},
+  {name:"10 · propane", hint:"hint: three C in a row. ends need 3 H, middle needs 2 H.", w:7,h:7,
+   atoms:[{x:1,y:3,el:"C"},{x:3,y:3,el:"C"},{x:5,y:3,el:"C"},
+     {x:1,y:1,el:"H"},{x:1,y:5,el:"H"},{x:0,y:3,el:"H"},
+     {x:3,y:1,el:"H"},{x:3,y:5,el:"H"},
+     {x:5,y:1,el:"H"},{x:5,y:5,el:"H"},{x:6,y:3,el:"H"}]},
+  {name:"11 · the ring lab (final)", hint:"hint: a ring of 8: C–N–C–O–C–N–C–O. C needs 2 extra H, N needs 1, O needs 0. corners share rows/cols.", w:7,h:7,
+   atoms:[
+     {x:1,y:1,el:"C"},{x:3,y:1,el:"N"},{x:5,y:1,el:"C"},{x:5,y:3,el:"O"},
+     {x:5,y:5,el:"C"},{x:3,y:5,el:"N"},{x:1,y:5,el:"C"},{x:1,y:3,el:"O"},
+     {x:1,y:0,el:"H"},{x:0,y:1,el:"H"},
+     {x:3,y:0,el:"H"},
+     {x:6,y:1,el:"H"},{x:5,y:0,el:"H"},
+     {x:6,y:5,el:"H"},{x:5,y:6,el:"H"},
+     {x:3,y:6,el:"H"},
+     {x:0,y:5,el:"H"},{x:1,y:6,el:"H"}
+   ]}
+];
+
+var idx = 0, bonds = {}, hist = [], selected = -1;
+var done = {};
+try{
+  var s = JSON.parse(localStorage.getItem("covbonds")||"{}");
+  if(s.done) done = s.done;
+  if(typeof s.idx === "number" && s.idx>=0 && s.idx<LEVELS.length) idx = s.idx;
+}catch(e){}
+function save(){ try{localStorage.setItem("covbonds", JSON.stringify({done:done, idx:idx}));}catch(e){} }
+
+var svg = document.getElementById("board"),
+    msg = document.getElementById("msg"),
+    lname = document.getElementById("lname"),
+    hint = document.getElementById("hint"),
+    lvlBox = document.getElementById("levels");
+
+function key(a,b){ return a<b ? a+"-"+b : b+"-"+a; }
+function atoms(){ return LEVELS[idx].atoms; }
+function countAt(i){
+  var t=0, at=atoms();
+  for(var k in bonds){ var p=k.split("-").map(Number);
+    if(p[0]===i||p[1]===i) t+=bonds[k]; }
+  return t;
+}
+function remaining(i){ return VALENCE[atoms()[i].el]-countAt(i); }
+
+function say(t, cls){ msg.textContent=t; msg.className=cls||""; }
+
+/* geometry helpers */
+function blocked(a,b){
+  var A=atoms()[a], B=atoms()[b], at=atoms();
+  if(a===b) return "same atom";
+  if(A.x!==B.x && A.y!==B.y) return "must share a row or column";
+  for(var i=0;i<at.length;i++){
+    if(i===a||i===b) continue;
+    var C=at[i];
+    if(A.x===B.x && C.x===A.x && C.y>Math.min(A.y,B.y) && C.y<Math.max(A.y,B.y)) return "blocked by "+C.el;
+    if(A.y===B.y && C.y===A.y && C.x>Math.min(A.x,B.x) && C.x<Math.max(A.x,B.x)) return "blocked by "+C.el;
+  }
+  return null;
+}
+function segsCross(a,b,c,d){
+  var A=atoms()[a],B=atoms()[b],C=atoms()[c],D=atoms()[d];
+  // sharing an endpoint is fine
+  if(a===c||a===d||b===c||b===d) return false;
+  var h1=(A.y===B.y), h2=(C.y===D.y);
+  if(h1===h2) return false; // parallel (overlapping handled by blocked rule)
+  var h = h1?{y:A.y,x1:Math.min(A.x,B.x),x2:Math.max(A.x,B.x)}:{y:C.y,x1:Math.min(C.x,D.x),x2:Math.max(C.x,D.x)};
+  var v = h1?{x:C.x,y1:Math.min(C.y,D.y),y2:Math.max(C.y,D.y)}:{x:A.x,y1:Math.min(A.y,B.y),y2:Math.max(A.y,B.y)};
+  return (v.x>h.x1 && v.x<h.x2 && h.y>v.y1 && h.y<v.y2);
+}
+function crosses(a,b){
+  for(var k in bonds){
+    if(!bonds[k]) continue;
+    var p=k.split("-").map(Number);
+    // same pair: parallel lines, allowed
+    if((p[0]===a&&p[1]===b)||(p[0]===b&&p[1]===a)) continue;
+    if(segsCross(a,b,p[0],p[1])) return true;
+  }
+  return false;
+}
+
+function tryAdd(a,b){
+  var bl = blocked(a,b);
+  if(bl){ say(bl+".", "err"); return false; }
+  var k=key(a,b), cur=bonds[k]||0;
+  if(cur>=3){ say("max triple bond — tap again to clear it.", "err"); delBond(a,b,true); return true; }
+  if(remaining(a)<=0 || remaining(b)<=0){ say("that atom is already full.", "err"); return false; }
+  if(crosses(a,b)){ say("bonds can't cross.", "err"); return false; }
+  hist.push(JSON.parse(JSON.stringify(bonds)));
+  bonds[k]=cur+1;
+  // triple-tap clears? no — 4th tap clears (handled above). 3 is allowed (N2).
+  say(remaining(a)===0&&remaining(b)===0 ? "nice." : atoms()[a].el+" needs "+remaining(a)+", "+atoms()[b].el+" needs "+remaining(b)+".");
+  afterMove();
+  return true;
+}
+function delBond(a,b,all){
+  var k=key(a,b); if(!bonds[k]) return;
+  hist.push(JSON.parse(JSON.stringify(bonds)));
+  if(all){ delete bonds[k]; } else { bonds[k]--; if(bonds[k]<=0) delete bonds[k]; }
+  afterMove();
+}
+function connected(){
+  var at=atoms(), seen={}, q=[0]; seen[0]=1;
+  var adj={}; for(var k in bonds){ var p=k.split("-").map(Number);
+    (adj[p[0]]=adj[p[0]]||[]).push(p[1]); (adj[p[1]]=adj[p[1]]||[]).push(p[0]); }
+  while(q.length){ var n=q.pop(); var nb=adj[n]||[];
+    for(var i=0;i<nb.length;i++) if(!seen[nb[i]]){seen[nb[i]]=1;q.push(nb[i]);} }
+  return Object.keys(seen).length===at.length;
+}
+function won(){
+  var at=atoms();
+  for(var i=0;i<at.length;i++) if(countAt(i)!==VALENCE[at[i].el]) return false;
+  return connected();
+}
+function afterMove(){
+  draw();
+  if(won()){
+    done[idx]=1; save(); renderLevels();
+    say("molecule complete! "+(idx<LEVELS.length-1?"next one →":"you finished all 11. show your teacher."), "win");
+  }
+}
+
+/* rendering */
+function px(v){ return PAD+v*CELL; }
+function draw(){
+  var L=LEVELS[idx], at=L.atoms;
+  svg.setAttribute("viewBox","0 0 "+(px(L.w-1)+PAD)+" "+(px(L.h-1)+PAD+8));
+  svg.innerHTML="";
+  var NS="http://www.w3.org/2000/svg";
+  // grid dots
+  for(var gx=0;gx<L.w;gx++) for(var gy=0;gy<L.h;gy++){
+    var c=document.createElementNS(NS,"circle");
+    c.setAttribute("cx",px(gx)); c.setAttribute("cy",px(gy)); c.setAttribute("r",1.2);
+    c.setAttribute("class","hint-dot"); svg.appendChild(c);
+  }
+  // bonds
+  for(var k in bonds){
+    var p=k.split("-").map(Number), n=bonds[k];
+    var A=at[p[0]],B=at[p[1]];
+    var x1=px(A.x),y1=px(A.y),x2=px(B.x),y2=px(B.y);
+    var dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy);
+    var ux=dx/len, uy=dy/len, ox=-uy, oy=ux;
+    var R=20; // trim inside atom circles
+    x1+=ux*R; y1+=uy*R; x2-=ux*R; y2-=uy*R;
+    var offs = n===1?[0]:n===2?[-4.5,4.5]:[-7,0,7];
+    for(var i=0;i<offs.length;i++){
+      var l=document.createElementNS(NS,"line");
+      l.setAttribute("x1",x1+ox*offs[i]); l.setAttribute("y1",y1+oy*offs[i]);
+      l.setAttribute("x2",x2+ox*offs[i]); l.setAttribute("y2",y2+oy*offs[i]);
+      l.setAttribute("class","bond"); svg.appendChild(l);
+    }
+    // fat invisible hit line to remove one bond
+    var h=document.createElementNS(NS,"line");
+    h.setAttribute("x1",x1);h.setAttribute("y1",y1);h.setAttribute("x2",x2);h.setAttribute("y2",y2);
+    h.setAttribute("class","bond-hit");
+    (function(a,b){ h.addEventListener("pointerdown", function(e){ e.stopPropagation(); delBond(a,b,false); say("removed one bond."); }); })(p[0],p[1]);
+    svg.appendChild(h);
+  }
+  // atoms
+  for(var i=0;i<at.length;i++){
+    (function(i){
+      var g=document.createElementNS(NS,"g");
+      g.setAttribute("class","atom"+(remaining(i)===0?" satisfied":"")+(selected===i?" selected":""));
+      g.setAttribute("transform","translate("+px(at[i].x)+","+px(at[i].y)+")");
+      var cir=document.createElementNS(NS,"circle");
+      cir.setAttribute("r",20); cir.setAttribute("class","body"); g.appendChild(cir);
+      var t=document.createElementNS(NS,"text");
+      t.setAttribute("text-anchor","middle"); t.setAttribute("dy","6"); t.setAttribute("font-size","16");
+      t.textContent=at[i].el; g.appendChild(t);
+      var r=document.createElementNS(NS,"text");
+      r.setAttribute("text-anchor","middle"); r.setAttribute("dy","-24"); r.setAttribute("font-size","11");
+      r.textContent = remaining(i)===0 ? "✓" : "needs "+remaining(i);
+      g.appendChild(r);
+      g.addEventListener("pointerdown", function(e){ e.preventDefault(); onAtomDown(i); });
+      g.addEventListener("pointerup", function(e){ e.preventDefault(); onAtomUp(i); });
+      svg.appendChild(g);
+    })(i);
+  }
+}
+
+var dragFrom=-1;
+function onAtomDown(i){
+  dragFrom=i;
+  if(selected===-1){ selected=i; draw(); }
+  else if(selected===i){ selected=-1; draw(); }
+}
+function onAtomUp(i){
+  if(dragFrom!==-1 && dragFrom!==i){ tryAdd(dragFrom,i); selected=-1; }
+  else if(selected!==-1 && selected!==i){ tryAdd(selected,i); selected=-1; }
+  else if(selected===i){ /* keep selected for click-click */ }
+  else { selected=i; }
+  dragFrom=-1; draw();
+}
+svg.addEventListener("pointerleave", function(){ dragFrom=-1; });
+
+function loadLevel(i){
+  idx=i; bonds={}; hist=[]; selected=-1; save();
+  lname.textContent=LEVELS[idx].name;
+  hint.textContent=LEVELS[idx].hint;
+  renderLevels(); draw();
+  say(idx===0 ? "tap an atom, then tap another in the same row or column." : LEVELS[idx].atoms.length+" atoms. all happy + all connected = win.");
+}
+function renderLevels(){
+  lvlBox.innerHTML="";
+  for(var i=0;i<LEVELS.length;i++){
+    (function(i){
+      var b=document.createElement("button");
+      b.textContent=i+1;
+      if(done[i]) b.className="done";
+      if(i===idx) b.className+=(b.className?" ":"")+"cur";
+      b.title=LEVELS[i].name;
+      b.addEventListener("click",function(){loadLevel(i);});
+      lvlBox.appendChild(b);
+    })(i);
+  }
+}
+document.getElementById("undo").addEventListener("click",function(){
+  if(!hist.length){say("nothing to undo.");return;}
+  bonds=hist.pop(); selected=-1; draw(); say("undone.");
+});
+document.getElementById("clear").addEventListener("click",function(){
+  if(!Object.keys(bonds).length) return;
+  hist.push(JSON.parse(JSON.stringify(bonds))); bonds={}; selected=-1; draw(); say("cleared. fresh flask.");
+});
+document.addEventListener("keydown",function(e){
+  if(e.key==="u"||e.key==="U") document.getElementById("undo").click();
+  if(e.key==="r"||e.key==="R") document.getElementById("clear").click();
+  if(e.key==="ArrowRight") loadLevel(Math.min(LEVELS.length-1,idx+1));
+  if(e.key==="ArrowLeft") loadLevel(Math.max(0,idx-1));
+});
+
+renderLevels(); loadLevel(idx);
+</script>
 </body>
 </html>

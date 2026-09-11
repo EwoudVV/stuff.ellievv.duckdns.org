@@ -1,5 +1,7 @@
-# stuff.ellievv.duckdns.org
+# stuff — covalent bonds puzzle
 
-Tiny placeholder for `stuff.ellievv.duckdns.org`, served via GitHub Pages.
+Hashi-style puzzle reskinned as covalent bonds. H wants 1, O 2, N 3, C 4.
+Single file (`index.html`), no deps, ~16KB.
 
-DNS: DuckDNS wildcard — `stuff.ellievv` → same IP as `ellievv.duckdns.org`, no DuckDNS change needed.
+- main: https://stuff.ellievv.duckdns.org (this repo, via CNAME)
+- mirror: https://ewoudvv.github.io/stuff-mirror/ (separate repo, no CNAME, for when duckdns is blocked)
