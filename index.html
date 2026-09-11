@@ -3,80 +3,69 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="covalent bonds — a hashi-style puzzle. connect atoms until every valence is happy.">
-<title>covalent bonds — stuff</title>
+<meta name="description" content="connect the bonds.">
+<title>bonds — stuff</title>
 <style>
   :root{
-    --paper:#fbf7ee; --ink:#22201b; --faint:#8a8474;
-    --line:#e3dac6; --red:#b3402e; --green:#2e7d4f;
+    --paper:#fff; --ink:#111;
+    --faint:#777; --red:#a00; --green:#0a5c36;
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
   body{
     background:var(--paper); color:var(--ink);
-    font-family:Georgia,'Times New Roman',serif;
-    min-height:100vh;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    min-height:100vh; font-size:14px;
   }
-  /* faint notebook lines */
-  body::before{
-    content:""; position:fixed; inset:0; pointer-events:none;
-    background:repeating-linear-gradient(to bottom, transparent 0 27px, var(--line) 27px 28px);
-    opacity:.45;
-  }
-  .wrap{max-width:720px;margin:0 auto;padding:20px 16px 60px;position:relative}
-  header{border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:12px}
-  header .top{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--faint);display:flex;justify-content:space-between}
-  h1{font-size:26px;margin:6px 0 2px;font-weight:normal}
-  h1 u{text-decoration:underline wavy 1.5px;text-underline-offset:4px}
-  .sub{font-style:italic;color:#5a5546;margin:0;font-size:15px}
-  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0}
+  .wrap{max-width:640px;margin:0 auto;padding:16px 12px 60px;position:relative}
+  header{padding-bottom:8px;margin-bottom:8px}
+  header .top{font-size:12px;color:var(--faint);display:flex;justify-content:space-between}
+  h1{font-size:22px;margin:6px 0 2px;font-weight:bold}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
   .levels{display:flex;gap:6px;flex-wrap:wrap}
   .levels button{
-    font-family:ui-monospace,Menlo,monospace;font-size:13px;
-    width:32px;height:30px;background:transparent;color:var(--ink);
-    border:1.5px solid var(--ink);border-radius:255px 15px 225px 15px/15px 225px 15px 255px;
+    font:inherit;font-size:13px;
+    width:30px;height:28px;background:#fff;color:var(--ink);
+    border:1px solid #111;
     cursor:pointer;padding:0;
   }
-  .levels button.done{background:var(--ink);color:var(--paper)}
-  .levels button.cur{outline:2px solid var(--ink);outline-offset:2px}
+  .levels button.done{background:#111;color:#fff}
+  .levels button.cur{outline:2px solid #111;outline-offset:1px}
   .btn{
-    font-family:ui-monospace,Menlo,monospace;font-size:13px;
-    background:transparent;border:1.5px solid var(--ink);color:var(--ink);
-    border-radius:15px 225px 15px 255px/255px 15px 225px 15px;
-    padding:5px 10px;cursor:pointer;
+    font:inherit;font-size:13px;
+    background:#fff;border:1px solid #111;color:#111;
+    padding:4px 10px;cursor:pointer;
   }
   .btn:active{transform:translateY(1px)}
-  #msg{font-family:ui-monospace,Menlo,monospace;font-size:13px;min-height:20px;color:#5a5546}
+  #msg{font-size:13px;min-height:20px;color:#333}
   #msg.err{color:var(--red)}
   #msg.win{color:var(--green)}
   #board{
-    border:2px solid var(--ink);background:#fffdf6;
-    border-radius:3px;display:block;width:100%;height:auto;
+    border:1px solid #111;background:#fff;
+    display:block;width:100%;height:auto;
     touch-action:none;user-select:none;-webkit-user-select:none;
   }
-  .legend{font-size:14px;border:1.5px dashed var(--faint);padding:8px 10px;margin:12px 0}
-  .legend b{font-family:ui-monospace,Menlo,monospace}
-  details{font-size:14px;margin:10px 0}
-  summary{cursor:pointer;font-style:italic}
-  footer{margin-top:18px;border-top:1px solid var(--ink);padding-top:8px;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--faint);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  .legend{font-size:13px;border-top:1px dotted #999;padding:8px 0;margin:10px 0}
+  details{font-size:13px;margin:10px 0}
+  summary{cursor:pointer}
+  footer{margin-top:16px;border-top:1px solid #111;padding-top:8px;font-size:12px;color:var(--faint);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
   footer a{color:inherit}
   /* svg pieces */
   .atom{cursor:pointer}
-  .atom circle.body{fill:#fffdf6;stroke:var(--ink);stroke-width:2}
-  .atom.satisfied circle.body{fill:#e9f2e7}
-  .atom.selected circle.body{stroke-width:3.5}
-  .atom text{font-family:ui-monospace,Menlo,monospace;pointer-events:none}
-  .bond{stroke:var(--ink);stroke-width:2.5;stroke-linecap:round}
+  .atom circle.body{fill:#fff;stroke:#111;stroke-width:1.5}
+  .atom.satisfied circle.body{stroke-width:3}
+  .atom.selected circle.body{stroke-width:3.5;stroke-dasharray:4 2}
+  .atom text{font-family:inherit;pointer-events:none}
+  .bond{stroke:#111;stroke-width:2;stroke-linecap:round}
   .bond-hit{stroke:transparent;stroke-width:16;cursor:pointer}
-  .hint-dot{fill:var(--ink);opacity:.25}
+  .hint-dot{fill:#111;opacity:.12}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="top"><span>science class → covalent bonds</span><span>per. 3 · fig. 1</span></div>
-    <h1><u>connect the bonds</u></h1>
-    <p class="sub">a hashi-like puzzle with atoms. every atom wants its full valence — H wants 1, O wants 2, N wants 3, C wants 4.</p>
+    <div class="top"><span>science class</span><span>per. 3</span></div>
+    <h1>connect the bonds</h1>
   </header>
 
   <div class="row">
@@ -90,25 +79,24 @@
     <button class="btn" id="clear">clear</button>
   </div>
 
-  <div id="msg">tap an atom, then tap another in the same row or column.</div>
+  <div id="msg">click one atom then another one in the same row.</div>
 
   <svg id="board" role="application" aria-label="bond puzzle board"></svg>
 
-  <div class="legend" id="hint">hint: …</div>
+  <div class="legend">H = 1 &nbsp; O = 2 &nbsp; N = 3 &nbsp; C = 4<br><span id="hint"></span></div>
 
   <details>
-    <summary>how to play (30 sec)</summary>
-    <p>1. Tap / drag from one atom to another in the <b>same row or column</b> with nothing in between.<br>
-    2. Each tap adds <b>one bond</b>: 1 line → 2 lines → 3 lines → back to 0.<br>
-    3. Bonds <b>can't cross</b> and can't use more than an atom wants.<br>
-    4. Win when every atom is happy <b>and</b> everything is connected into one molecule.<br>
-    5. Tip: click a bond's middle to remove one. <span style="font-family:ui-monospace,monospace">u</span>=undo, <span style="font-family:ui-monospace,monospace">r</span>=clear.</p>
-    <p style="color:#5a5546">In class N was written as 2 sometimes — here we use the real thing: N wants 3. H 1 · O 2 · N 3 · C 4.</p>
+    <summary>how to play</summary>
+    <p>click or drag from one atom to another in the same row/column with nothing between them.<br>
+    each click adds a line. 1, then 2, then 3, then it clears.<br>
+    lines can't cross. numbers on top say how many are left.<br>
+    done = all zeros and everything joined up.<br>
+    click the middle of a line to take one back. u = undo, r = clear.</p>
   </details>
 
   <footer>
-    <span>stuff.ellievv.duckdns.org — pencil &amp; paper ed.</span>
-    <span><a href="https://ellievv.duckdns.org">ellievv.duckdns.org</a> · <a href="https://ewoudvv.github.io/stuff-mirror/">mirror</a></span>
+    <span>made in science class</span>
+    <span><a href="https://ellievv.duckdns.org">main site</a> · <a href="https://ewoudvv.github.io/stuff-mirror/">mirror</a></span>
   </footer>
 </div>
 
@@ -117,36 +105,35 @@
 var VALENCE = {H:1, O:2, N:3, C:4};
 var CELL = 52, PAD = 34;
 
-/* levels: atoms on a w×h grid. must be solvable by design. */
 var LEVELS = [
-  {name:"1 · hydrogen gas", hint:"hint: H only wants 1. just connect them once.", w:5,h:3,
+  {name:"1. h2", hint:"just join them once.", w:5,h:3,
    atoms:[{x:1,y:1,el:"H"},{x:3,y:1,el:"H"}]},
-  {name:"2 · oxygen gas", hint:"hint: O wants 2 each. tap the same pair twice for a double bond.", w:5,h:3,
+  {name:"2. o2", hint:"same pair twice. double line.", w:5,h:3,
    atoms:[{x:1,y:1,el:"O"},{x:3,y:1,el:"O"}]},
-  {name:"3 · nitrogen gas", hint:"hint: N wants 3 each. triple bond — tap three times. strongest bond here.", w:5,h:3,
+  {name:"3. n2", hint:"three times. triple.", w:5,h:3,
    atoms:[{x:1,y:1,el:"N"},{x:3,y:1,el:"N"}]},
-  {name:"4 · water", hint:"hint: O wants 2, each H wants 1. (real water is bent — here it's straight so it fits the grid.)", w:7,h:3,
+  {name:"4. water", hint:"o in the middle. (real water is bent, this one is straight so it fits)", w:7,h:3,
    atoms:[{x:3,y:1,el:"O"},{x:1,y:1,el:"H"},{x:5,y:1,el:"H"}]},
-  {name:"5 · methane", hint:"hint: C wants 4. four single bonds, one to each H.", w:5,h:5,
+  {name:"5. methane", hint:"c in the middle, 4 singles.", w:5,h:5,
    atoms:[{x:2,y:2,el:"C"},{x:2,y:0,el:"H"},{x:0,y:2,el:"H"},{x:4,y:2,el:"H"},{x:2,y:4,el:"H"}]},
-  {name:"6 · ammonia", hint:"hint: N wants 3. three H around it, one side left empty.", w:5,h:5,
+  {name:"6. ammonia", hint:"n + 3. one side stays empty.", w:5,h:5,
    atoms:[{x:2,y:1,el:"N"},{x:0,y:1,el:"H"},{x:4,y:1,el:"H"},{x:2,y:3,el:"H"}]},
-  {name:"7 · carbon dioxide", hint:"hint: C wants 4, each O wants 2. double bond on both sides: O=C=O.", w:7,h:5,
+  {name:"7. co2", hint:"double on both sides.", w:7,h:5,
    atoms:[{x:1,y:2,el:"O"},{x:3,y:2,el:"C"},{x:5,y:2,el:"O"}]},
-  {name:"8 · ethane", hint:"hint: C–C in the middle, then 3 H on each C. check rows and columns.", w:7,h:5,
+  {name:"8. ethane", hint:"c-c in the middle then 3 each.", w:7,h:5,
    atoms:[{x:2,y:2,el:"C"},{x:4,y:2,el:"C"},
      {x:2,y:0,el:"H"},{x:0,y:2,el:"H"},{x:2,y:4,el:"H"},
      {x:4,y:0,el:"H"},{x:6,y:2,el:"H"},{x:4,y:4,el:"H"}]},
-  {name:"9 · ethene", hint:"hint: C=C double bond in the middle, 2 H on each C.", w:7,h:5,
+  {name:"9. ethene", hint:"c=c double in the middle, 2 each.", w:7,h:5,
    atoms:[{x:2,y:2,el:"C"},{x:4,y:2,el:"C"},
      {x:2,y:0,el:"H"},{x:2,y:4,el:"H"},
      {x:4,y:0,el:"H"},{x:4,y:4,el:"H"}]},
-  {name:"10 · propane", hint:"hint: three C in a row. ends need 3 H, middle needs 2 H.", w:7,h:7,
+  {name:"10. propane", hint:"three c in a row.", w:7,h:7,
    atoms:[{x:1,y:3,el:"C"},{x:3,y:3,el:"C"},{x:5,y:3,el:"C"},
      {x:1,y:1,el:"H"},{x:1,y:5,el:"H"},{x:0,y:3,el:"H"},
      {x:3,y:1,el:"H"},{x:3,y:5,el:"H"},
      {x:5,y:1,el:"H"},{x:5,y:5,el:"H"},{x:6,y:3,el:"H"}]},
-  {name:"11 · the ring lab (final)", hint:"hint: a ring of 8: C–N–C–O–C–N–C–O. C needs 2 extra H, N needs 1, O needs 0. corners share rows/cols.", w:7,h:7,
+  {name:"11. ring thing", hint:"ring of 8. good luck.", w:7,h:7,
    atoms:[
      {x:1,y:1,el:"C"},{x:3,y:1,el:"N"},{x:5,y:1,el:"C"},{x:5,y:3,el:"O"},
      {x:5,y:5,el:"C"},{x:3,y:5,el:"N"},{x:1,y:5,el:"C"},{x:1,y:3,el:"O"},
@@ -189,13 +176,13 @@ function say(t, cls){ msg.textContent=t; msg.className=cls||""; }
 /* geometry helpers */
 function blocked(a,b){
   var A=atoms()[a], B=atoms()[b], at=atoms();
-  if(a===b) return "same atom";
-  if(A.x!==B.x && A.y!==B.y) return "must share a row or column";
+  if(a===b) return "same one";
+  if(A.x!==B.x && A.y!==B.y) return "has to be same row/column";
   for(var i=0;i<at.length;i++){
     if(i===a||i===b) continue;
     var C=at[i];
-    if(A.x===B.x && C.x===A.x && C.y>Math.min(A.y,B.y) && C.y<Math.max(A.y,B.y)) return "blocked by "+C.el;
-    if(A.y===B.y && C.y===A.y && C.x>Math.min(A.x,B.x) && C.x<Math.max(A.x,B.x)) return "blocked by "+C.el;
+    if(A.x===B.x && C.x===A.x && C.y>Math.min(A.y,B.y) && C.y<Math.max(A.y,B.y)) return C.el+" is in the way";
+    if(A.y===B.y && C.y===A.y && C.x>Math.min(A.x,B.x) && C.x<Math.max(A.x,B.x)) return C.el+" is in the way";
   }
   return null;
 }
@@ -222,15 +209,14 @@ function crosses(a,b){
 
 function tryAdd(a,b){
   var bl = blocked(a,b);
-  if(bl){ say(bl+".", "err"); return false; }
+  if(bl){ say(bl, "err"); return false; }
   var k=key(a,b), cur=bonds[k]||0;
-  if(cur>=3){ say("max triple bond — tap again to clear it.", "err"); delBond(a,b,true); return true; }
-  if(remaining(a)<=0 || remaining(b)<=0){ say("that atom is already full.", "err"); return false; }
-  if(crosses(a,b)){ say("bonds can't cross.", "err"); return false; }
+  if(cur>=3){ say("max is 3, clearing it", "err"); delBond(a,b,true); return true; }
+  if(remaining(a)<=0 || remaining(b)<=0){ say("that one is full", "err"); return false; }
+  if(crosses(a,b)){ say("can't cross lines", "err"); return false; }
   hist.push(JSON.parse(JSON.stringify(bonds)));
   bonds[k]=cur+1;
-  // triple-tap clears? no — 4th tap clears (handled above). 3 is allowed (N2).
-  say(remaining(a)===0&&remaining(b)===0 ? "nice." : atoms()[a].el+" needs "+remaining(a)+", "+atoms()[b].el+" needs "+remaining(b)+".");
+  say(remaining(a)===0&&remaining(b)===0 ? "ok" : atoms()[a].el+" left "+remaining(a)+", "+atoms()[b].el+" left "+remaining(b));
   afterMove();
   return true;
 }
@@ -257,7 +243,7 @@ function afterMove(){
   draw();
   if(won()){
     done[idx]=1; save(); renderLevels();
-    say("molecule complete! "+(idx<LEVELS.length-1?"next one →":"you finished all 11. show your teacher."), "win");
+    say(idx<LEVELS.length-1 ? "done. next ->" : "done all 11. show your teacher", "win");
   }
 }
 
@@ -294,7 +280,7 @@ function draw(){
     var h=document.createElementNS(NS,"line");
     h.setAttribute("x1",x1);h.setAttribute("y1",y1);h.setAttribute("x2",x2);h.setAttribute("y2",y2);
     h.setAttribute("class","bond-hit");
-    (function(a,b){ h.addEventListener("pointerdown", function(e){ e.stopPropagation(); delBond(a,b,false); say("removed one bond."); }); })(p[0],p[1]);
+    (function(a,b){ h.addEventListener("pointerdown", function(e){ e.stopPropagation(); delBond(a,b,false); say("took one back"); }); })(p[0],p[1]);
     svg.appendChild(h);
   }
   // atoms
@@ -310,7 +296,7 @@ function draw(){
       t.textContent=at[i].el; g.appendChild(t);
       var r=document.createElementNS(NS,"text");
       r.setAttribute("text-anchor","middle"); r.setAttribute("dy","-24"); r.setAttribute("font-size","11");
-      r.textContent = remaining(i)===0 ? "✓" : "needs "+remaining(i);
+      r.textContent = remaining(i)===0 ? "done" : remaining(i);
       g.appendChild(r);
       g.addEventListener("pointerdown", function(e){ e.preventDefault(); onAtomDown(i); });
       g.addEventListener("pointerup", function(e){ e.preventDefault(); onAtomUp(i); });
@@ -339,7 +325,7 @@ function loadLevel(i){
   lname.textContent=LEVELS[idx].name;
   hint.textContent=LEVELS[idx].hint;
   renderLevels(); draw();
-  say(idx===0 ? "tap an atom, then tap another in the same row or column." : LEVELS[idx].atoms.length+" atoms. all happy + all connected = win.");
+  say(idx===0 ? "click one atom then another one in the same row." : LEVELS[idx].atoms.length+" atoms.");
 }
 function renderLevels(){
   lvlBox.innerHTML="";
@@ -356,12 +342,12 @@ function renderLevels(){
   }
 }
 document.getElementById("undo").addEventListener("click",function(){
-  if(!hist.length){say("nothing to undo.");return;}
-  bonds=hist.pop(); selected=-1; draw(); say("undone.");
+  if(!hist.length){say("nothing to undo");return;}
+  bonds=hist.pop(); selected=-1; draw(); say("ok undone");
 });
 document.getElementById("clear").addEventListener("click",function(){
   if(!Object.keys(bonds).length) return;
-  hist.push(JSON.parse(JSON.stringify(bonds))); bonds={}; selected=-1; draw(); say("cleared. fresh flask.");
+  hist.push(JSON.parse(JSON.stringify(bonds))); bonds={}; selected=-1; draw(); say("cleared");
 });
 document.addEventListener("keydown",function(e){
   if(e.key==="u"||e.key==="U") document.getElementById("undo").click();
