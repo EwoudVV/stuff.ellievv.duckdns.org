@@ -91,11 +91,12 @@
     each click adds a line. 1, then 2, then 3, then it clears.<br>
     lines can't cross. numbers on top say how many are left.<br>
     done = all zeros and everything joined up.<br>
-    click the middle of a line to take one back. u = undo, r = clear.</p>
+    click the middle of a line to take one back. u = undo, r = clear.<br>
+    after 11 it just keeps making them up, harder each time.</p>
   </details>
 
   <footer>
-    <span>made in science class</span>
+    <span>stuff</span>
     <span><a href="https://ellievv.duckdns.org">main site</a> · <a href="https://ewoudvv.github.io/stuff-mirror/">mirror</a></span>
   </footer>
 </div>
@@ -146,12 +147,158 @@ var LEVELS = [
    ]}
 ];
 
+/* endless levels after the first 11. seeded by level number so a given
+   level is always the same puzzle. builds a solution first (connected,
+   no crossings, degrees 1-4) then turns degrees into elements
+   (1=H 2=O 3=N 4=C), so the solution always exists. higher levels get
+   more atoms, bigger grids, more double/triple bonds and extra loops. */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+var DEG2EL={1:"H",2:"O",3:"N",4:"C"};
+function genEndless(idx){
+  var k=idx-10;
+  var g=Math.min(7+Math.floor((k-1)/3),10),w=g,h=g;
+  var target=Math.min(16+k*2,Math.floor(g*g*0.45));
+  var extraLoops=Math.min(Math.floor((k+1)/2),8);
+  var p3=Math.min(0.02+k*0.015,0.15),p2=Math.min(0.10+k*0.03,0.40);
+  var needBranch=Math.min(2.2+k*0.06,3.0);
+  var needMulti=k>=2?Math.min(Math.floor(k/2),4):0;
+  var needMaxDeg=k>=3?4:3;
+  for(var restart=0;restart<80;restart++){
+    var rnd=mulberry32(((0x9E3779B9^(idx*2654435761))>>>0)+restart*101);
+    var atoms=[{x:Math.floor(rnd()*w),y:Math.floor(rnd()*h)}];
+    var deg=[0],sol={};
+    var ok=true,n,c,s,j2,t;
+    var pk=function(a,b){return a<b?a+"-"+b:b+"-"+a;};
+    var occ=function(x,y){for(var i=0;i<atoms.length;i++)if(atoms[i].x===x&&atoms[i].y===y)return true;return false;};
+    var clearP=function(x1,y1,x2,y2){
+      for(var i=0;i<atoms.length;i++){var C=atoms[i];
+        if(x1===x2&&C.x===x1&&C.y>Math.min(y1,y2)&&C.y<Math.max(y1,y2))return false;
+        if(y1===y2&&C.y===y1&&C.x>Math.min(x1,x2)&&C.x<Math.max(x1,x2))return false;}
+      return true;
+    };
+    var noCross=function(ax,ay,bx,by){
+      var h1=(ay===by);
+      for(var kk in sol){
+        var p=kk.split("-").map(Number),A=atoms[p[0]],B=atoms[p[1]];
+        var h2=(A.y===B.y);
+        if(h1===h2)continue;
+        var q1,q2,q3,q4,q5,q6;
+        if(h1){q1=Math.min(ax,bx);q2=Math.max(ax,bx);q3=ay;q4=A.x;q5=Math.min(A.y,B.y);q6=Math.max(A.y,B.y);}
+        else{q1=Math.min(A.x,B.x);q2=Math.max(A.x,B.x);q3=A.y;q4=ax;q5=Math.min(ay,by);q6=Math.max(ay,by);}
+        if(q4>q1&&q4<q2&&q3>q5&&q3<q6)return false;
+      }
+      return true;
+    };
+    var sampleM=function(maxM){
+      var r=rnd();
+      if(maxM>=3&&r>=1-p3)return 3;
+      if(maxM>=2&&r>=1-p3-p2)return 2;
+      return 1;
+    };
+    for(n=1;n<target;n++){
+      var cells=[];
+      for(var cx=0;cx<w;cx++)for(var cy=0;cy<h;cy++)if(!occ(cx,cy))cells.push([cx,cy]);
+      for(s=cells.length-1;s>0;s--){j2=Math.floor(rnd()*(s+1));t=cells[s];cells[s]=cells[j2];cells[j2]=t;}
+      var options=[],lim=Math.min(cells.length,90);
+      for(c=0;c<lim;c++){
+        var x=cells[c][0],y=cells[c][1];
+        for(j2=0;j2<atoms.length;j2++){
+          var J=atoms[j2];
+          if(J.x!==x&&J.y!==y)continue;
+          if(!clearP(x,y,J.x,J.y))continue;
+          var maxM=Math.min(3,4-deg[j2]);
+          if(maxM<1)continue;
+          if(!noCross(x,y,J.x,J.y))continue;
+          options.push({x:x,y:y,j:j2,maxM:maxM});
+        }
+        if(options.length>=24)break;
+      }
+      if(!options.length){ok=false;break;}
+      var pick=options[Math.floor(rnd()*options.length)];
+      var m=sampleM(pick.maxM);
+      atoms.push({x:pick.x,y:pick.y});deg.push(0);
+      var ni=atoms.length-1;
+      deg[ni]+=m;deg[pick.j]+=m;
+      var kk=pk(ni,pick.j);sol[kk]=(sol[kk]||0)+m;
+    }
+    if(!ok)continue;
+    var addedLoops=0,tries=0;
+    while(addedLoops<extraLoops&&tries<300){
+      tries++;
+      var a=Math.floor(rnd()*atoms.length),b=Math.floor(rnd()*atoms.length);
+      if(a===b)continue;
+      var A=atoms[a],B=atoms[b];
+      if(A.x!==B.x&&A.y!==B.y)continue;
+      if(!clearP(A.x,A.y,B.x,B.y))continue;
+      var kk2=pk(a,b),curM=sol[kk2]||0;
+      var maxM2=Math.min(3-curM,4-deg[a],4-deg[b]);
+      if(maxM2<1)continue;
+      var bad=false,h1b=(A.y===B.y);
+      for(var kk3 in sol){
+        if(kk3===kk2)continue;
+        var pp=kk3.split("-").map(Number);
+        if(pp[0]===a||pp[0]===b||pp[1]===a||pp[1]===b)continue;
+        var C2=atoms[pp[0]],D=atoms[pp[1]],h2b=(C2.y===D.y);
+        if(h1b===h2b)continue;
+        var r1,r2,r3,r4,r5,r6;
+        if(h1b){r1=Math.min(A.x,B.x);r2=Math.max(A.x,B.x);r3=A.y;r4=C2.x;r5=Math.min(C2.y,D.y);r6=Math.max(C2.y,D.y);}
+        else{r1=Math.min(C2.x,D.x);r2=Math.max(C2.x,D.x);r3=C2.y;r4=A.x;r5=Math.min(A.y,B.y);r6=Math.max(A.y,B.y);}
+        if(r4>r1&&r4<r2&&r3>r5&&r3<r6){bad=true;break;}
+      }
+      if(bad)continue;
+      var m2=sampleM(maxM2);
+      sol[kk2]=curM+m2;deg[a]+=m2;deg[b]+=m2;addedLoops++;
+    }
+    var els=[],valid=true,multi=0,maxD=0,d;
+    for(d=0;d<deg.length;d++){
+      if(deg[d]<1||deg[d]>4){valid=false;break;}
+      if(deg[d]>maxD)maxD=deg[d];
+      els.push(DEG2EL[deg[d]]);
+    }
+    if(!valid)continue;
+    for(var kk4 in sol)if(sol[kk4]>=2)multi++;
+    if(multi<needMulti)continue;
+    if(maxD<needMaxDeg)continue;
+    var tot=0,e2,f,z;
+    for(e2=0;e2<atoms.length;e2++){
+      var cnt=0,E=atoms[e2];
+      for(f=0;f<atoms.length;f++){
+        if(f===e2)continue;
+        var F=atoms[f];
+        if(E.x!==F.x&&E.y!==F.y)continue;
+        var bl=false;
+        for(z=0;z<atoms.length;z++){
+          if(z===e2||z===f)continue;var Z=atoms[z];
+          if(E.x===F.x&&Z.x===E.x&&Z.y>Math.min(E.y,F.y)&&Z.y<Math.max(E.y,F.y)){bl=true;break;}
+          if(E.y===F.y&&Z.y===E.y&&Z.x>Math.min(E.x,F.x)&&Z.x<Math.max(E.x,F.x)){bl=true;break;}
+        }
+        if(!bl)cnt++;
+      }
+      tot+=cnt;
+    }
+    if(tot/atoms.length<needBranch)continue;
+    var la=[];
+    for(var q=0;q<atoms.length;q++)la.push({x:atoms[q].x,y:atoms[q].y,el:els[q]});
+    return {name:(idx+1)+".",hint:"made up. "+la.length+" atoms.",w:w,h:h,atoms:la};
+  }
+  var n2=target,fw=Math.min(9,n2),fa=[],fx=0,fy=0,fdir=1,i2;
+  for(i2=0;i2<n2;i2++){
+    fa.push({x:fx,y:fy,el:(i2===0||i2===n2-1)?"H":"O"});
+    if(i2===n2-1)break;
+    if(fx+fdir>=0&&fx+fdir<fw){fx+=fdir;}
+    else{fy+=2;fdir*=-1;}
+  }
+  return {name:(idx+1)+".",hint:"made up. "+fa.length+" atoms.",w:fw,h:fy+1,atoms:fa};
+}
+var FIXED_N=LEVELS.length, genCache={};
+function cur(){ return idx<FIXED_N?LEVELS[idx]:(genCache[idx]||(genCache[idx]=genEndless(idx))); }
+
 var idx = 0, bonds = {}, hist = [], selected = -1;
 var done = {};
 try{
   var s = JSON.parse(localStorage.getItem("covbonds")||"{}");
   if(s.done) done = s.done;
-  if(typeof s.idx === "number" && s.idx>=0 && s.idx<LEVELS.length) idx = s.idx;
+  if(typeof s.idx === "number" && s.idx>=0 && s.idx<100000) idx = Math.floor(s.idx);
 }catch(e){}
 function save(){ try{localStorage.setItem("covbonds", JSON.stringify({done:done, idx:idx}));}catch(e){} }
 
@@ -162,7 +309,7 @@ var svg = document.getElementById("board"),
     lvlBox = document.getElementById("levels");
 
 function key(a,b){ return a<b ? a+"-"+b : b+"-"+a; }
-function atoms(){ return LEVELS[idx].atoms; }
+function atoms(){ return cur().atoms; }
 function countAt(i){
   var t=0, at=atoms();
   for(var k in bonds){ var p=k.split("-").map(Number);
@@ -243,14 +390,16 @@ function afterMove(){
   draw();
   if(won()){
     done[idx]=1; save(); renderLevels();
-    say(idx<LEVELS.length-1 ? "done. next ->" : "done all 11. show your teacher", "win");
+    say(idx===FIXED_N-1 ? "done. 12 onwards are made up" : "done. next ->", "win");
+    msg.style.cursor="pointer";
+    msg.onclick=function(){loadLevel(idx+1);};
   }
 }
 
 /* rendering */
 function px(v){ return PAD+v*CELL; }
 function draw(){
-  var L=LEVELS[idx], at=L.atoms;
+  var L=cur(), at=L.atoms;
   svg.setAttribute("viewBox","0 0 "+(px(L.w-1)+PAD)+" "+(px(L.h-1)+PAD+8));
   svg.innerHTML="";
   var NS="http://www.w3.org/2000/svg";
@@ -321,15 +470,17 @@ function onAtomUp(i){
 svg.addEventListener("pointerleave", function(){ dragFrom=-1; });
 
 function loadLevel(i){
+  if(i<0)i=0;
   idx=i; bonds={}; hist=[]; selected=-1; save();
-  lname.textContent=LEVELS[idx].name;
-  hint.textContent=LEVELS[idx].hint;
+  msg.onclick=null; msg.style.cursor="";
+  lname.textContent=cur().name;
+  hint.textContent=cur().hint;
   renderLevels(); draw();
-  say(idx===0 ? "click one atom then another one in the same row." : LEVELS[idx].atoms.length+" atoms.");
+  say(idx===0 ? "click one atom then another one in the same row." : cur().atoms.length+" atoms.");
 }
 function renderLevels(){
   lvlBox.innerHTML="";
-  for(var i=0;i<LEVELS.length;i++){
+  for(var i=0;i<FIXED_N;i++){
     (function(i){
       var b=document.createElement("button");
       b.textContent=i+1;
@@ -340,6 +491,26 @@ function renderLevels(){
       lvlBox.appendChild(b);
     })(i);
   }
+  var dots=document.createElement("span");
+  dots.textContent="…"; dots.style.color="#777";
+  lvlBox.appendChild(dots);
+  if(idx>=FIXED_N){
+    var cb=document.createElement("button");
+    cb.textContent=idx+1;
+    if(done[idx])cb.className="done";
+    cb.className+=(cb.className?" ":"")+"cur";
+    cb.title=cur().name+" "+cur().hint;
+    cb.addEventListener("click",function(){loadLevel(idx);});
+    lvlBox.appendChild(cb);
+  }
+  var pv=document.createElement("button");
+  pv.textContent="‹"; pv.title="prev";
+  pv.addEventListener("click",function(){loadLevel(idx-1);});
+  lvlBox.appendChild(pv);
+  var nx=document.createElement("button");
+  nx.textContent="›"; nx.title="next";
+  nx.addEventListener("click",function(){loadLevel(idx+1);});
+  lvlBox.appendChild(nx);
 }
 document.getElementById("undo").addEventListener("click",function(){
   if(!hist.length){say("nothing to undo");return;}
@@ -352,8 +523,8 @@ document.getElementById("clear").addEventListener("click",function(){
 document.addEventListener("keydown",function(e){
   if(e.key==="u"||e.key==="U") document.getElementById("undo").click();
   if(e.key==="r"||e.key==="R") document.getElementById("clear").click();
-  if(e.key==="ArrowRight") loadLevel(Math.min(LEVELS.length-1,idx+1));
-  if(e.key==="ArrowLeft") loadLevel(Math.max(0,idx-1));
+  if(e.key==="ArrowRight") loadLevel(idx+1);
+  if(e.key==="ArrowLeft") loadLevel(idx-1);
 });
 
 renderLevels(); loadLevel(idx);
