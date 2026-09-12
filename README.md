@@ -1,4 +1,4 @@
-# stuff — covalent bonds puzzle
+# stuff: covalent bonds puzzle
 
 Hashi-style puzzle reskinned as covalent bonds. H wants 1, O 2, N 3, C 4.
 Single file (`index.html`), no deps, ~16KB.
